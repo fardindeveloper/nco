@@ -1,0 +1,248 @@
+/**
+ * استایل‌های پنل ادمین افزونه Nutri Coach
+ */
+
+/* استایل‌های عمومی */
+.nutri-coach-box {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 3px;
+}
+
+.nutri-coach-tabs {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ccd0d4;
+    display: flex;
+    overflow-x: auto;
+}
+
+.nutri-coach-tabs .tab {
+    padding: 10px 15px;
+    margin-right: 5px;
+    text-decoration: none;
+    border: 1px solid #ccd0d4;
+    border-bottom: none;
+    background: #f1f1f1;
+    color: #555;
+    border-radius: 3px 3px 0 0;
+}
+
+.nutri-coach-tabs .tab.active {
+    background: #fff;
+    border-bottom: 1px solid #fff;
+    margin-bottom: -1px;
+    color: #0073aa;
+}
+
+/* استایل‌های صفحه قوانین */
+.nutri-coach-rule-form {
+    max-width: 800px;
+}
+
+.nutri-coach-rule-form .form-section {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.nutri-coach-rule-form h3 {
+    margin-top: 0;
+}
+
+/* استایل‌های برنامه کاربر */
+.nutri-coach-program-tabs {
+    margin-bottom: 20px;
+}
+
+.nutri-coach-program-tabs .program-tab {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #f1f1f1;
+    border: 1px solid #ccd0d4;
+    text-decoration: none;
+    color: #555;
+    margin-right: 5px;
+    border-radius: 3px;
+}
+
+.nutri-coach-program-tabs .program-tab.active {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+.nutri-coach-day-tabs {
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.nutri-coach-day-tabs .day-tab {
+    padding: 5px 10px;
+    background: #f1f1f1;
+    border: 1px solid #ccd0d4;
+    text-decoration: none;
+    color: #555;
+    border-radius: 3px;
+}
+
+.nutri-coach-day-tabs .day-tab.active {
+    background: #e5f5fa;
+    color: #0073aa;
+    border-color: #0073aa;
+}
+
+.nutri-coach-exercise-item,
+.nutri-coach-meal-item {
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 3px;
+    position: relative;
+}
+
+.nutri-coach-exercise-item h4,
+.nutri-coach-meal-item h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.nutri-coach-exercise-item .actions,
+.nutri-coach-meal-item .actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.nutri-coach-add-exercise,
+.nutri-coach-add-meal {
+    margin-top: 10px;
+}
+
+/* استایل‌های گزارش پیشرفت */
+.nutri-coach-progress-chart {
+    height: 300px;
+    margin-bottom: 20px;
+}
+
+.nutri-coach-progress-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.nutri-coach-metric-card {
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 3px;
+    flex: 1;
+    min-width: 180px;
+    text-align: center;
+}
+
+.nutri-coach-metric-card h3 {
+    margin-top: 0;
+    font-size: 16px;
+    color: #555;
+}
+
+.nutri-coach-metric-card .value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0073aa;
+}
+
+/* جدول تقویم پیشرفت */
+.nutri-coach-calendar {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.nutri-coach-calendar th,
+.nutri-coach-calendar td {
+    border: 1px solid #eee;
+    padding: 10px;
+    text-align: center;
+}
+
+.nutri-coach-calendar th {
+    background: #f1f1f1;
+}
+
+.nutri-coach-calendar .completed {
+    background-color: #c6f6d5;
+}
+
+.nutri-coach-calendar .partial {
+    background-color: #fef3c7;
+}
+
+.nutri-coach-calendar .missed {
+    background-color: #fee2e2;
+}
+
+/* استایل‌های آنترپومتریک */
+.nutri-coach-measurements-form .form-row {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.nutri-coach-measurements-form .form-row label {
+    width: 150px;
+    padding-right: 10px;
+}
+
+.nutri-coach-measurements-form .form-row input {
+    flex: 1;
+}
+
+/* فیلترها و جستجو */
+.nutri-coach-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.nutri-coach-filters .filter-item {
+    flex: 1;
+    min-width: 150px;
+    max-width: 300px;
+}
+
+.nutri-coach-filters label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.nutri-coach-filters .button {
+    margin-top: 21px;
+}
+
+/* استایل‌های رسپانسیو */
+@media screen and (max-width: 782px) {
+    .nutri-coach-filters {
+        flex-direction: column;
+    }
+    
+    .nutri-coach-filters .filter-item {
+        max-width: 100%;
+    }
+    
+    .nutri-coach-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .nutri-coach-metric-card {
+        min-width: 100%;
+    }
+} 
