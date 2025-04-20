@@ -1226,56 +1226,6 @@ class Nutri_Coach_Diet_Program {
                         
                         $html .= '</div>'; // .foods-list
                     }
-if (!empty($meal['foods'])) {
-                        $html .= '<div class="foods-list">';
-                        
-                        $total_calories = 0;
-                        $total_macros = array(
-                            'protein' => 0,
-                            'carbs' => 0,
-                            'fat' => 0
-                        );
-                        
-                        foreach ($meal['foods'] as $food) {
-                            $html .= '<div class="food-item">';
-                            $html .= '<span class="food-name">' . esc_html($food['name']) . '</span>';
-                            $html .= '<span class="food-amount">' . esc_html($food['amount']) . '</span>';
-                            $html .= '<span class="food-calories">' . esc_html($food['calories']) . ' ' . __('کالری', 'nutri-coach-program') . '</span>';
-                            
-                            if (!empty($food['macros'])) {
-                                $html .= '<span class="food-macros">';
-                                $html .= sprintf(
-                                    __('پروتئین: %dg, کربوهیدرات: %dg, چربی: %dg', 'nutri-coach-program'),
-                                    $food['macros']['protein'],
-                                    $food['macros']['carbs'],
-                                    $food['macros']['fat']
-                                );
-                                $html .= '</span>';
-                                
-                                // محاسبه مجموع
-                                $total_calories += $food['calories'];
-                                $total_macros['protein'] += $food['macros']['protein'];
-                                $total_macros['carbs'] += $food['macros']['carbs'];
-                                $total_macros['fat'] += $food['macros']['fat'];
-                            }
-                            
-                            $html .= '</div>'; // .food-item
-                        }
-                        
-                        // نمایش مجموع
-                        $html .= '<div class="meal-totals">';
-                        $html .= '<strong>' . __('مجموع:', 'nutri-coach-program') . '</strong> ';
-                        $html .= '<span class="total-calories">' . $total_calories . ' ' . __('کالری', 'nutri-coach-program') . '</span>, ';
-                        $html .= sprintf(
-                            __('پروتئین: %dg, کربوهیدرات: %dg, چربی: %dg', 'nutri-coach-program'),
-                            $total_macros['protein'],
-                            $total_macros['carbs'],
-                            $total_macros['fat']
-                        );
-                        $html .= '</div>'; // .meal-totals
-                        
-                        $html .= '</div>'; // .foods-list
-                    }
                     
                     if (!empty($meal['description'])) {
                         $html .= '<div class="meal-description">' . esc_html($meal['description']) . '</div>';
@@ -1393,7 +1343,7 @@ if (!empty($meal['foods'])) {
         }
     }
     
-    /**
+   /**
      * محاسبه مقادیر درشت‌مغذی‌ها براساس کالری و هدف
      *
      * @param int $calories کالری روزانه
