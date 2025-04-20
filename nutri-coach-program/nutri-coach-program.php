@@ -76,6 +76,8 @@ final class Nutri_Coach_Program {
         // اجکس برای تیک زدن تمرین‌ها
         add_action('wp_ajax_ncp_mark_exercise', array($this, 'ajax_mark_exercise'));
         add_action('wp_ajax_ncp_mark_meal', array($this, 'ajax_mark_meal'));
+        add_action('wp_ajax_ncp_get_exercise_progress', array($this, 'ajax_get_exercise_progress'));
+        add_action('wp_ajax_ncp_get_meal_progress', array($this, 'ajax_get_meal_progress'));
         
         // اضافه کردن اسکریپت‌ها و استایل‌ها
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
@@ -162,6 +164,7 @@ final class Nutri_Coach_Program {
             diet_program longtext DEFAULT NULL,
             status varchar(20) DEFAULT 'active',
             date_created datetime DEFAULT CURRENT_TIMESTAMP,
+            date_updated datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id)
         ) $charset_collate;";
         
@@ -558,500 +561,645 @@ final class Nutri_Coach_Program {
             if (isset($_POST['ncp_muscle_group'])) {
                 update_post_meta($post_id, '_ncp_muscle_group', sanitize_text_field($_POST['ncp_muscle_group']));
             }
-            
             // ذخیره سطح دشواری
-            if (isset($_POST['ncp_difficulty'])) {
-                update_post_meta($post_id, '_ncp_difficulty', sanitize_text_field($_POST['ncp_difficulty']));
-            }
-            
-            // ذخیره تجهیزات مورد نیاز
-            if (isset($_POST['ncp_equipment'])) {
-                update_post_meta($post_id, '_ncp_equipment', sanitize_text_field($_POST['ncp_equipment']));
-            }
-            
-            // ذخیره آدرس ویدیو
-            if (isset($_POST['ncp_video_url'])) {
-                update_post_meta($post_id, '_ncp_video_url', esc_url_raw($_POST['ncp_video_url']));
-            }
-        }
-        
-        // ذخیره متاباکس غذاها
-        if (isset($_POST['ncp_meal_meta_nonce']) && wp_verify_nonce($_POST['ncp_meal_meta_nonce'], 'ncp_save_meal_meta')) {
-            // ذخیره نوع وعده
-            if (isset($_POST['ncp_meal_type'])) {
-                update_post_meta($post_id, '_ncp_meal_type', sanitize_text_field($_POST['ncp_meal_type']));
-            }
-            
-            // ذخیره کالری
-            if (isset($_POST['ncp_calories'])) {
-                update_post_meta($post_id, '_ncp_calories', absint($_POST['ncp_calories']));
-            }
-            
-            // ذخیره پروتئین
-            if (isset($_POST['ncp_protein'])) {
-                update_post_meta($post_id, '_ncp_protein', floatval($_POST['ncp_protein']));
-            }
-            
-            // ذخیره کربوهیدرات
-            if (isset($_POST['ncp_carbs'])) {
-                update_post_meta($post_id, '_ncp_carbs', floatval($_POST['ncp_carbs']));
-            }
-            
-            // ذخیره چربی
-            if (isset($_POST['ncp_fat'])) {
-                update_post_meta($post_id, '_ncp_fat', floatval($_POST['ncp_fat']));
-            }
-            
-            // ذخیره نوع رژیم
-            if (isset($_POST['ncp_diet_type'])) {
-                update_post_meta($post_id, '_ncp_diet_type', sanitize_text_field($_POST['ncp_diet_type']));
-            }
-            
-            // ذخیره مواد لازم
-            if (isset($_POST['ncp_ingredients'])) {
-                update_post_meta($post_id, '_ncp_ingredients', sanitize_textarea_field($_POST['ncp_ingredients']));
-            }
-        }
-    }
-    
-    /**
-     * اضافه کردن منو به پیشخوان وردپرس
-     */
-    public function admin_menu() {
-        // اضافه کردن صفحه قوانین تمرینی
-        add_submenu_page(
-            'nutri-coach',
-            __('قوانین تمرینی', 'nutri-coach-program'),
-            __('قوانین تمرینی', 'nutri-coach-program'),
-            'manage_options',
-            'nutri-coach-rules',
-            array($this, 'rules_page')
-        );
-        
-        // اضافه کردن صفحه برنامه‌های کاربران
-        add_submenu_page(
-            'nutri-coach',
-            __('برنامه‌های کاربران', 'nutri-coach-program'),
-            __('برنامه‌های کاربران', 'nutri-coach-program'),
-            'manage_options',
-            'nutri-coach-user-programs',
-            array($this, 'user_programs_page')
-        );
-        
-        // اضافه کردن صفحه گزارش‌های پیشرفت
-        add_submenu_page(
-            'nutri-coach',
-            __('گزارش‌های پیشرفت', 'nutri-coach-program'),
-            __('گزارش‌های پیشرفت', 'nutri-coach-program'),
-            'manage_options',
-            'nutri-coach-progress-reports',
-            array($this, 'progress_reports_page')
-        );
-    }
-    
-    /**
-     * صفحه قوانین تمرینی
-     */
-    public function rules_page() {
-        // بررسی اکشن (نمایش/افزودن/ویرایش/حذف)
-        $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
-        
-        if ($action === 'add' || $action === 'edit') {
-            // فرم افزودن/ویرایش قانون
-            include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/rule-form.php');
-        } else {
-            // لیست قوانین
-            include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/rules-list.php');
-        }
-    }
-    
-    /**
-     * صفحه برنامه‌های کاربران
-     */
-    public function user_programs_page() {
-        // بررسی اکشن (نمایش/افزودن/ویرایش/حذف)
-        $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
-        
-        if ($action === 'view' || $action === 'edit') {
-            // مشاهده/ویرایش برنامه کاربر
-            include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/user-program.php');
-        } else {
-            // لیست برنامه‌های کاربران
-            include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/user-programs-list.php');
-        }
-    }
-    
-/**
- * صفحه گزارش‌های پیشرفت
- */
-public function progress_reports_page() {
-    // ایجاد نمونه از کلاس پیگیری پیشرفت
-    require_once NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'includes/class-progress-tracker.php';
-    $nutri_coach_progress = new Nutri_Coach_Progress_Tracker();
-    
-    // بررسی پارامترها (کاربر، تاریخ و...)
-    $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
-    
-    if ($user_id > 0) {
-        // نمایش گزارش پیشرفت یک کاربر خاص
-        include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/user-progress-report.php');
-    } else {
-        // لیست کاربران برای انتخاب
-        include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/progress-reports-list.php');
-    }
-}
-    
-    /**
-     * شورت‌کد نمایش برنامه تمرینی و غذایی
-     */
-    public function program_shortcode($atts) {
-        // پارامترهای شورت‌کد
-        $atts = shortcode_atts(array(
-            'user_id' => 0,
-            'type' => 'both', // workout, diet, both
-        ), $atts);
-        
-        // اگر آی‌دی کاربر مشخص نشده، کاربر جاری را استفاده کن
-        if ($atts['user_id'] <= 0) {
-            $atts['user_id'] = get_current_user_id();
-        }
-        
-        // اگر کاربر لاگین نیست
-        if ($atts['user_id'] <= 0) {
-            return '<div class="nutri-coach-login-required">' .
-                   __('برای مشاهده برنامه خود لطفا وارد شوید.', 'nutri-coach-program') .
-                   '<br><a href="' . wp_login_url(get_permalink()) . '" class="button">' . __('ورود', 'nutri-coach-program') . '</a>' .
-                   '</div>';
-        }
-        
-        // شروع بافر خروجی
-        ob_start();
-        
-        // بارگذاری قالب برنامه
-        include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/program.php');
-        
-        // بازگرداندن خروجی
-        return ob_get_clean();
-    }
-    
-    /**
-     * شورت‌کد نمایش پیشرفت کاربر
-     */
-    public function progress_shortcode($atts) {
-        // پارامترهای شورت‌کد
-        $atts = shortcode_atts(array(
-            'user_id' => 0,
-            'type' => 'both', // workout, diet, both
-            'period' => 'month', // week, month, year, all
-        ), $atts);
-        
-        // اگر آی‌دی کاربر مشخص نشده، کاربر جاری را استفاده کن
-        if ($atts['user_id'] <= 0) {
-            $atts['user_id'] = get_current_user_id();
-        }
-        
-        // اگر کاربر لاگین نیست
-        if ($atts['user_id'] <= 0) {
-            return '<div class="nutri-coach-login-required">' .
-                   __('برای مشاهده پیشرفت خود لطفا وارد شوید.', 'nutri-coach-program') .
-                   '<br><a href="' . wp_login_url(get_permalink()) . '" class="button">' . __('ورود', 'nutri-coach-program') . '</a>' .
-                   '</div>';
-        }
-        
-        // شروع بافر خروجی
-        ob_start();
-        
-        // بارگذاری قالب پیشرفت
-        include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/progress.php');
-        
-        // بازگرداندن خروجی
-        return ob_get_clean();
-    }
-    
-    /**
-     * اجکس برای تیک زدن تمرین‌ها
-     */
-    public function ajax_mark_exercise() {
-        // بررسی امنیتی
-        check_ajax_referer('nutri_coach_program_nonce', 'security');
-        
-        // بررسی آیا کاربر لاگین است
-        if (!is_user_logged_in()) {
-            wp_send_json_error(array(
-                'message' => __('برای ثبت پیشرفت باید وارد شوید.', 'nutri-coach-program')
-            ));
-            return;
-        }
-        
-        $user_id = get_current_user_id();
-        $program_id = isset($_POST['program_id']) ? intval($_POST['program_id']) : 0;
-        $exercise_id = isset($_POST['exercise_id']) ? sanitize_text_field($_POST['exercise_id']) : '';
-        $completed = isset($_POST['completed']) ? (intval($_POST['completed']) === 1) : false;
-        $sets = isset($_POST['sets']) ? intval($_POST['sets']) : 0;
-        $reps = isset($_POST['reps']) ? intval($_POST['reps']) : 0;
-        $weight = isset($_POST['weight']) ? floatval($_POST['weight']) : 0;
-        $notes = isset($_POST['notes']) ? sanitize_textarea_field($_POST['notes']) : '';
-        
-        // بررسی پارامترها
-        if ($program_id <= 0 || empty($exercise_id)) {
-            wp_send_json_error(array(
-                'message' => __('پارامترهای نامعتبر.', 'nutri-coach-program')
-            ));
-            return;
-        }
-        
-        // تعامل با کلاس پیگیری پیشرفت
-        $progress_tracker = new Nutri_Coach_Progress_Tracker();
-        $result = $progress_tracker->track_exercise_progress($user_id, $program_id, $exercise_id, $completed, $sets, $reps, $weight, $notes);
-        
-        if ($result) {
-            wp_send_json_success(array(
-                'message' => __('پیشرفت با موفقیت ثبت شد.', 'nutri-coach-program')
-            ));
-        } else {
-            wp_send_json_error(array(
-                'message' => __('خطا در ثبت پیشرفت.', 'nutri-coach-program')
-            ));
-        }
-    }
-    
-    /**
-     * اجکس برای تیک زدن وعده‌های غذایی
-     */
-    public function ajax_mark_meal() {
-        // بررسی امنیتی
-        check_ajax_referer('nutri_coach_program_nonce', 'security');
-        
-        // بررسی آیا کاربر لاگین است
-        if (!is_user_logged_in()) {
-            wp_send_json_error(array(
-                'message' => __('برای ثبت پیشرفت باید وارد شوید.', 'nutri-coach-program')
-            ));
-            return;
-        }
-        
-        $user_id = get_current_user_id();
-        $program_id = isset($_POST['program_id']) ? intval($_POST['program_id']) : 0;
-        $meal_id = isset($_POST['meal_id']) ? sanitize_text_field($_POST['meal_id']) : '';
-        $completed = isset($_POST['completed']) ? (intval($_POST['completed']) === 1) : false;
-        $notes = isset($_POST['notes']) ? sanitize_textarea_field($_POST['notes']) : '';
-        
-        // بررسی پارامترها
-        if ($program_id <= 0 || empty($meal_id)) {
-            wp_send_json_error(array(
-                'message' => __('پارامترهای نامعتبر.', 'nutri-coach-program')
-            ));
-            return;
-        }
-        
-        // تعامل با کلاس پیگیری پیشرفت
-        $progress_tracker = new Nutri_Coach_Progress_Tracker();
-        $result = $progress_tracker->track_meal_progress($user_id, $program_id, $meal_id, $completed, $notes);
-        
-        if ($result) {
-            wp_send_json_success(array(
-                'message' => __('پیشرفت با موفقیت ثبت شد.', 'nutri-coach-program')
-            ));
-        } else {
-            wp_send_json_error(array(
-                'message' => __('خطا در ثبت پیشرفت.', 'nutri-coach-program')
-            ));
-        }
-    }
-    
-    /**
-     * اضافه کردن اسکریپت‌ها و استایل‌های سمت کاربر
-     */
-    public function enqueue_frontend_scripts() {
-        wp_enqueue_style(
-            'nutri-coach-program-style',
-            NUTRI_COACH_PROGRAM_PLUGIN_URL . 'assets/css/frontend.css',
-            array(),
-            NUTRI_COACH_PROGRAM_VERSION
-        );
-        
-        wp_enqueue_script(
-            'chart-js',
-            'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js',
-            array(),
-            '3.7.1',
-            true
-        );
-        
-        wp_enqueue_script(
-            'nutri-coach-program-script',
-            NUTRI_COACH_PROGRAM_PLUGIN_URL . 'assets/js/frontend.js',
-            array('jquery', 'chart-js'),
-            NUTRI_COACH_PROGRAM_VERSION,
-            true
-        );
-        
-        wp_localize_script(
-            'nutri-coach-program-script',
-            'nutriCoachProgram',
-            array(
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('nutri_coach_program_nonce'),
-                'i18n' => array(
-                    'save_success' => __('اطلاعات با موفقیت ذخیره شد.', 'nutri-coach-program'),
-                    'save_error' => __('خطا در ذخیره اطلاعات.', 'nutri-coach-program'),
-                ),
-            )
-        );
-    }
-    
-    /**
-     * اضافه کردن اسکریپت‌ها و استایل‌های سمت مدیر
-     */
-    public function enqueue_admin_scripts($hook) {
-        // اضافه کردن استایل‌ها فقط در صفحات مربوط به افزونه
-        if (strpos($hook, 'nutri-coach') !== false) {
-            wp_enqueue_style(
-                'nutri-coach-program-admin-style',
-                NUTRI_COACH_PROGRAM_PLUGIN_URL . 'assets/css/admin.css',
-                array(),
-                NUTRI_COACH_PROGRAM_VERSION
-            );
-            
-            wp_enqueue_script(
-                'chart-js',
-                'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js',
-                array(),
-                '3.7.1',
-                true
-            );
-            
-            wp_enqueue_script(
-                'nutri-coach-program-admin-script',
-                NUTRI_COACH_PROGRAM_PLUGIN_URL . 'assets/js/admin.js',
-                array('jquery', 'chart-js'),
-                NUTRI_COACH_PROGRAM_VERSION,
-                true
-            );
-            
-            wp_localize_script(
-                'nutri-coach-program-admin-script',
-                'nutriCoachProgramAdmin',
-                array(
-                    'ajaxurl' => admin_url('admin-ajax.php'),
-                    'nonce' => wp_create_nonce('nutri_coach_program_admin_nonce'),
-                )
-            );
-        }
-    }
-    
-    /**
-     * افزودن داده‌های برنامه به پروفایل کاربر
-     */
-    public function add_program_data_to_profile($user_data, $user_id) {
-        // بررسی آیا کاربر برنامه دارد
-        global $wpdb;
-        $table_name = $wpdb->prefix . NUTRI_COACH_PROGRAM_PREFIX . 'user_programs';
-        
-        $program = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT * FROM $table_name WHERE user_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1",
-                $user_id
-            ),
-            ARRAY_A
-        );
-        
-        if ($program) {
-            // اضافه کردن اطلاعات برنامه به داده‌های کاربر
-            $user_data['has_program'] = true;
-            $user_data['program_id'] = $program['id'];
-            $user_data['program_start_date'] = $program['start_date'];
-            
-            // اضافه کردن جزئیات برنامه‌ها
-            if (!empty($program['workout_program'])) {
-                $user_data['workout_program'] = json_decode($program['workout_program'], true);
-            }
-            
-            if (!empty($program['diet_program'])) {
-                $user_data['diet_program'] = json_decode($program['diet_program'], true);
-            }
-            
-            // اضافه کردن آمار پیشرفت
-            $progress_tracker = new Nutri_Coach_Progress_Tracker();
-            $user_data['progress_stats'] = $progress_tracker->get_progress_stats($user_id, $program['id']);
-        } else {
-            $user_data['has_program'] = false;
-        }
-        
-        return $user_data;
-    }
-    
-    /**
-     * واکنش به بروزرسانی پروفایل کاربر
-     */
-    public function profile_updated($user_id, $data) {
-        // بررسی آیا نیاز به بروزرسانی برنامه کاربر است
-        $this->check_and_update_user_program($user_id);
-    }
-    
-    /**
-     * واکنش به افزودن داده‌های آنتروپومتریک جدید
-     */
-    public function anthropometric_added($user_id, $data) {
-        // بررسی آیا نیاز به بروزرسانی برنامه کاربر است
-        $this->check_and_update_user_program($user_id);
-    }
-    
-    /**
-     * بررسی و بروزرسانی برنامه کاربر
-     */
-    private function check_and_update_user_program($user_id) {
-        // دریافت اطلاعات کاربر
-        $user_data = apply_filters('nutri_coach_get_user_data', array(), $user_id);
-        
-        if (empty($user_data)) {
-            return;
-        }
-        
-        // یافتن قانون مناسب
-        $rule_id = $this->find_matching_rule($user_data);
-        
-        if ($rule_id > 0) {
-            // اختصاص برنامه به کاربر
-            $this->assign_program_to_user($user_id, $rule_id);
-        }
-    }
-    
-    /**
-     * یافتن قانون مناسب برای کاربر
-     */
-    private function find_matching_rule($user_data) {
-        global $wpdb;
-        $table_name = $wpdb->prefix . NUTRI_COACH_PROGRAM_PREFIX . 'rules';
-        
-        // استخراج اطلاعات کاربر
-        $gender = isset($user_data['gender']) ? $user_data['gender'] : '';
-        $age = isset($user_data['age']) ? intval($user_data['age']) : 0;
-        $waist = isset($user_data['waist_circumference']) ? floatval($user_data['waist_circumference']) : 0;
-        $hip = isset($user_data['hip_circumference']) ? floatval($user_data['hip_circumference']) : 0;
-        $neck = isset($user_data['neck_circumference']) ? floatval($user_data['neck_circumference']) : 0;
-        $fitness_goal = isset($user_data['fitness_goal']) ? $user_data['fitness_goal'] : '';
-        
-        // ساخت شرط پیچیده SQL
-        $where_conditions = array();
-        $where_params = array();
-        
-        // شرط جنسیت
-        if (!empty($gender)) {
-            $where_conditions[] = "(gender = %s OR gender = '')";
-            $where_params[] = $gender;
-        }
-        
-        // شرط سن
-        if ($age > 0) {
-            $where_conditions[] = "((age_min <= %d AND age_max >= %d) OR (age_min = 0 AND age_max = 0) OR (age_min = 0 AND age_max >= %d) OR (age_min <= %d AND age_max = 0))";
-            $where_params[] = $age;
-            $where_params[] = $age;
-            $where_params[] = $age;
-            $where_params[] = $age;
-        }
-        
-        // شرط دور کمر
+           if (isset($_POST['ncp_difficulty'])) {
+               update_post_meta($post_id, '_ncp_difficulty', sanitize_text_field($_POST['ncp_difficulty']));
+           }
+           
+           // ذخیره تجهیزات مورد نیاز
+           if (isset($_POST['ncp_equipment'])) {
+               update_post_meta($post_id, '_ncp_equipment', sanitize_text_field($_POST['ncp_equipment']));
+           }
+           
+           // ذخیره آدرس ویدیو
+           if (isset($_POST['ncp_video_url'])) {
+               update_post_meta($post_id, '_ncp_video_url', esc_url_raw($_POST['ncp_video_url']));
+           }
+       }
+       
+       // ذخیره متاباکس غذاها
+       if (isset($_POST['ncp_meal_meta_nonce']) && wp_verify_nonce($_POST['ncp_meal_meta_nonce'], 'ncp_save_meal_meta')) {
+           // ذخیره نوع وعده
+           if (isset($_POST['ncp_meal_type'])) {
+               update_post_meta($post_id, '_ncp_meal_type', sanitize_text_field($_POST['ncp_meal_type']));
+           }
+           
+           // ذخیره کالری
+           if (isset($_POST['ncp_calories'])) {
+               update_post_meta($post_id, '_ncp_calories', absint($_POST['ncp_calories']));
+           }
+           
+           // ذخیره پروتئین
+           if (isset($_POST['ncp_protein'])) {
+               update_post_meta($post_id, '_ncp_protein', floatval($_POST['ncp_protein']));
+           }
+           
+           // ذخیره کربوهیدرات
+           if (isset($_POST['ncp_carbs'])) {
+               update_post_meta($post_id, '_ncp_carbs', floatval($_POST['ncp_carbs']));
+           }
+           
+           // ذخیره چربی
+           if (isset($_POST['ncp_fat'])) {
+               update_post_meta($post_id, '_ncp_fat', floatval($_POST['ncp_fat']));
+           }
+           
+           // ذخیره نوع رژیم
+           if (isset($_POST['ncp_diet_type'])) {
+               update_post_meta($post_id, '_ncp_diet_type', sanitize_text_field($_POST['ncp_diet_type']));
+           }
+           
+           // ذخیره مواد لازم
+           if (isset($_POST['ncp_ingredients'])) {
+               update_post_meta($post_id, '_ncp_ingredients', sanitize_textarea_field($_POST['ncp_ingredients']));
+           }
+       }
+   }
+   
+   /**
+    * اضافه کردن منو به پیشخوان وردپرس
+    */
+   public function admin_menu() {
+       // اضافه کردن منوی اصلی
+       add_menu_page(
+           __('Nutri Coach', 'nutri-coach-program'),
+           __('Nutri Coach', 'nutri-coach-program'),
+           'manage_options',
+           'nutri-coach',
+           array($this, 'dashboard_page'),
+           'dashicons-carrot',
+           3
+       );
+       
+       // اضافه کردن صفحه داشبورد
+       add_submenu_page(
+           'nutri-coach',
+           __('داشبورد', 'nutri-coach-program'),
+           __('داشبورد', 'nutri-coach-program'),
+           'manage_options',
+           'nutri-coach',
+           array($this, 'dashboard_page')
+       );
+       
+       // اضافه کردن صفحه قوانین تمرینی
+       add_submenu_page(
+           'nutri-coach',
+           __('قوانین تمرینی', 'nutri-coach-program'),
+           __('قوانین تمرینی', 'nutri-coach-program'),
+           'manage_options',
+           'nutri-coach-rules',
+           array($this, 'rules_page')
+       );
+       
+       // اضافه کردن صفحه برنامه‌های کاربران
+       add_submenu_page(
+           'nutri-coach',
+           __('برنامه‌های کاربران', 'nutri-coach-program'),
+           __('برنامه‌های کاربران', 'nutri-coach-program'),
+           'manage_options',
+           'nutri-coach-user-programs',
+           array($this, 'user_programs_page')
+       );
+       
+       // اضافه کردن صفحه گزارش‌های پیشرفت
+       add_submenu_page(
+           'nutri-coach',
+           __('گزارش‌های پیشرفت', 'nutri-coach-program'),
+           __('گزارش‌های پیشرفت', 'nutri-coach-program'),
+           'manage_options',
+           'nutri-coach-progress-reports',
+           array($this, 'progress_reports_page')
+       );
+   }
+   
+   /**
+    * صفحه داشبورد
+    */
+   public function dashboard_page() {
+       // دریافت آمار کلی
+       global $wpdb;
+       
+       $total_users = count_users();
+       $total_programs = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}" . NUTRI_COACH_PROGRAM_PREFIX . "user_programs");
+       $active_programs = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}" . NUTRI_COACH_PROGRAM_PREFIX . "user_programs WHERE status = 'active'");
+       $total_rules = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}" . NUTRI_COACH_PROGRAM_PREFIX . "rules");
+       
+       $nutri_coach_progress = new Nutri_Coach_Progress_Tracker();
+       $total_progress_logs = $nutri_coach_progress->get_total_progress();
+       
+       // دریافت فعالیت‌های اخیر
+       $recent_activities = array();
+       // ... کد مربوط به دریافت فعالیت‌های اخیر ...
+       
+       include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/dashboard.php');
+   }
+   
+   /**
+    * صفحه قوانین تمرینی
+    */
+   public function rules_page() {
+       // بررسی اکشن (نمایش/افزودن/ویرایش/حذف)
+       $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
+       
+       if ($action === 'add' || $action === 'edit') {
+           // فرم افزودن/ویرایش قانون
+           include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/rule-form.php');
+       } else {
+           // لیست قوانین
+           include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/rules-list.php');
+       }
+   }
+   
+   /**
+    * صفحه برنامه‌های کاربران
+    */
+   public function user_programs_page() {
+       // بررسی اکشن (نمایش/افزودن/ویرایش/حذف)
+       $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
+       
+       if ($action === 'view' || $action === 'edit') {
+           // مشاهده/ویرایش برنامه کاربر
+           include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/user-program.php');
+       } else {
+           // لیست برنامه‌های کاربران
+           include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/user-programs-list.php');
+       }
+   }
+   
+   /**
+    * صفحه گزارش‌های پیشرفت
+    */
+   public function progress_reports_page() {
+       // ایجاد نمونه از کلاس پیگیری پیشرفت
+       require_once NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'includes/class-progress-tracker.php';
+       $nutri_coach_progress = new Nutri_Coach_Progress_Tracker();
+       
+       // بررسی پارامترها (کاربر، تاریخ و...)
+       $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
+       
+       if ($user_id > 0) {
+           // نمایش گزارش پیشرفت یک کاربر خاص
+           include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/user-progress-report.php');
+       } else {
+           // لیست کاربران برای انتخاب
+           include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/admin/progress-reports-list.php');
+       }
+   }
+   
+   /**
+    * شورت‌کد نمایش برنامه تمرینی و غذایی
+    */
+   public function program_shortcode($atts) {
+       // پارامترهای شورت‌کد
+       $atts = shortcode_atts(array(
+           'user_id' => 0,
+           'type' => 'both', // workout, diet, both
+       ), $atts);
+       
+       // اگر آی‌دی کاربر مشخص نشده، کاربر جاری را استفاده کن
+       if ($atts['user_id'] <= 0) {
+           $atts['user_id'] = get_current_user_id();
+       }
+       
+       // اگر کاربر لاگین نیست
+       if ($atts['user_id'] <= 0) {
+           return '<div class="nutri-coach-login-required">' .
+                  __('برای مشاهده برنامه خود لطفا وارد شوید.', 'nutri-coach-program') .
+                  '<br><a href="' . wp_login_url(get_permalink()) . '" class="button">' . __('ورود', 'nutri-coach-program') . '</a>' .
+                  '</div>';
+       }
+       
+       // شروع بافر خروجی
+       ob_start();
+       
+       // بارگذاری قالب برنامه
+       include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/program.php');
+       
+       // بازگرداندن خروجی
+       return ob_get_clean();
+   }
+   
+   /**
+    * شورت‌کد نمایش پیشرفت کاربر
+    */
+   public function progress_shortcode($atts) {
+       // پارامترهای شورت‌کد
+       $atts = shortcode_atts(array(
+           'user_id' => 0,
+           'type' => 'both', // workout, diet, both
+           'period' => 'month', // week, month, year, all
+       ), $atts);
+       
+       // اگر آی‌دی کاربر مشخص نشده، کاربر جاری را استفاده کن
+       if ($atts['user_id'] <= 0) {
+           $atts['user_id'] = get_current_user_id();
+       }
+       
+       // اگر کاربر لاگین نیست
+       if ($atts['user_id'] <= 0) {
+           return '<div class="nutri-coach-login-required">' .
+                  __('برای مشاهده پیشرفت خود لطفا وارد شوید.', 'nutri-coach-program') .
+                  '<br><a href="' . wp_login_url(get_permalink()) . '" class="button">' . __('ورود', 'nutri-coach-program') . '</a>' .
+                  '</div>';
+       }
+       
+       // شروع بافر خروجی
+       ob_start();
+       
+       // بارگذاری قالب پیشرفت
+       include(NUTRI_COACH_PROGRAM_PLUGIN_DIR . 'templates/progress.php');
+       
+       // بازگرداندن خروجی
+       return ob_get_clean();
+   }
+   
+   /**
+    * اجکس برای تیک زدن تمرین‌ها
+    */
+   public function ajax_mark_exercise() {
+       // بررسی امنیتی
+       check_ajax_referer('nutri_coach_program_nonce', 'security');
+       
+       // بررسی آیا کاربر لاگین است
+       if (!is_user_logged_in()) {
+           wp_send_json_error(array(
+               'message' => __('برای ثبت پیشرفت باید وارد شوید.', 'nutri-coach-program')
+           ));
+           return;
+       }
+       
+       $user_id = get_current_user_id();
+       $program_id = isset($_POST['program_id']) ? intval($_POST['program_id']) : 0;
+       $exercise_id = isset($_POST['exercise_id']) ? sanitize_text_field($_POST['exercise_id']) : '';
+       $completed = isset($_POST['completed']) ? (intval($_POST['completed']) === 1) : false;
+       $sets = isset($_POST['sets']) ? intval($_POST['sets']) : 0;
+       $reps = isset($_POST['reps']) ? intval($_POST['reps']) : 0;
+       $weight = isset($_POST['weight']) ? floatval($_POST['weight']) : 0;
+       $notes = isset($_POST['notes']) ? sanitize_textarea_field($_POST['notes']) : '';
+       
+       // بررسی پارامترها
+       if ($program_id <= 0 || empty($exercise_id)) {
+           wp_send_json_error(array(
+               'message' => __('پارامترهای نامعتبر.', 'nutri-coach-program')
+           ));
+           return;
+       }
+       
+       // تعامل با کلاس پیگیری پیشرفت
+       $progress_tracker = new Nutri_Coach_Progress_Tracker();
+       $result = $progress_tracker->track_exercise_progress($user_id, $program_id, $exercise_id, $completed, $sets, $reps, $weight, $notes);
+       
+       if ($result) {
+           wp_send_json_success(array(
+               'message' => __('پیشرفت با موفقیت ثبت شد.', 'nutri-coach-program')
+           ));
+       } else {
+           wp_send_json_error(array(
+               'message' => __('خطا در ثبت پیشرفت.', 'nutri-coach-program')
+           ));
+       }
+   }
+   
+   /**
+    * اجکس برای تیک زدن وعده‌های غذایی
+    */
+   public function ajax_mark_meal() {
+       // بررسی امنیتی
+       check_ajax_referer('nutri_coach_program_nonce', 'security');
+       
+       // بررسی آیا کاربر لاگین است
+       if (!is_user_logged_in()) {
+           wp_send_json_error(array(
+               'message' => __('برای ثبت پیشرفت باید وارد شوید.', 'nutri-coach-program')
+           ));
+           return;
+       }
+       
+       $user_id = get_current_user_id();
+       $program_id = isset($_POST['program_id']) ? intval($_POST['program_id']) : 0;
+       $meal_id = isset($_POST['meal_id']) ? sanitize_text_field($_POST['meal_id']) : '';
+       $completed = isset($_POST['completed']) ? (intval($_POST['completed']) === 1) : false;
+       $notes = isset($_POST['notes']) ? sanitize_textarea_field($_POST['notes']) : '';
+       
+       // بررسی پارامترها
+       if ($program_id <= 0 || empty($meal_id)) {
+           wp_send_json_error(array(
+               'message' => __('پارامترهای نامعتبر.', 'nutri-coach-program')
+           ));
+           return;
+       }
+       
+       // تعامل با کلاس پیگیری پیشرفت
+       $progress_tracker = new Nutri_Coach_Progress_Tracker();
+       $result = $progress_tracker->track_meal_progress($user_id, $program_id, $meal_id, $completed, $notes);
+       
+       if ($result) {
+           wp_send_json_success(array(
+               'message' => __('پیشرفت با موفقیت ثبت شد.', 'nutri-coach-program')
+           ));
+       } else {
+           wp_send_json_error(array(
+               'message' => __('خطا در ثبت پیشرفت.', 'nutri-coach-program')
+           ));
+       }
+   }
+   
+   /**
+    * اجکس برای دریافت پیشرفت تمرین
+    */
+   public function ajax_get_exercise_progress() {
+       // بررسی امنیتی
+       check_ajax_referer('nutri_coach_program_nonce', 'security');
+       
+       // بررسی آیا کاربر لاگین است
+       if (!is_user_logged_in()) {
+           wp_send_json_error(array(
+               'message' => __('برای مشاهده پیشرفت باید وارد شوید.', 'nutri-coach-program')
+           ));
+           return;
+       }
+       
+       $user_id = get_current_user_id();
+       $program_id = isset($_POST['program_id']) ? intval($_POST['program_id']) : 0;
+       $exercise_id = isset($_POST['exercise_id']) ? sanitize_text_field($_POST['exercise_id']) : '';
+       
+       // بررسی پارامترها
+       if ($program_id <= 0 || empty($exercise_id)) {
+           wp_send_json_error(array(
+               'message' => __('پارامترهای نامعتبر.', 'nutri-coach-program')
+           ));
+           return;
+       }
+       
+       // دریافت آخرین پیشرفت تمرین
+       global $wpdb;
+       $table_name = $wpdb->prefix . NUTRI_COACH_PROGRAM_PREFIX . 'exercise_progress';
+       
+       $progress = $wpdb->get_row(
+           $wpdb->prepare(
+               "SELECT * FROM $table_name 
+               WHERE user_id = %d AND program_id = %d AND exercise_id = %s 
+               ORDER BY date DESC 
+               LIMIT 1",
+               $user_id,
+               $program_id,
+               $exercise_id
+           ),
+           ARRAY_A
+       );
+       
+       if ($progress) {
+           wp_send_json_success($progress);
+       } else {
+           wp_send_json_success(array());
+       }
+   }
+   
+   /**
+    * اجکس برای دریافت پیشرفت وعده غذایی
+    */
+   public function ajax_get_meal_progress() {
+       // بررسی امنیتی
+       check_ajax_referer('nutri_coach_program_nonce', 'security');
+       
+       // بررسی آیا کاربر لاگین است
+       if (!is_user_logged_in()) {
+           wp_send_json_error(array(
+               'message' => __('برای مشاهده پیشرفت باید وارد شوید.', 'nutri-coach-program')
+           ));
+           return;
+       }
+       
+       $user_id = get_current_user_id();
+       $program_id = isset($_POST['program_id']) ? intval($_POST['program_id']) : 0;
+       $meal_id = isset($_POST['meal_id']) ? sanitize_text_field($_POST['meal_id']) : '';
+       
+       // بررسی پارامترها
+       if ($program_id <= 0 || empty($meal_id)) {
+           wp_send_json_error(array(
+               'message' => __('پارامترهای نامعتبر.', 'nutri-coach-program')
+           ));
+           return;
+       }
+       
+       // دریافت آخرین پیشرفت وعده
+       global $wpdb;
+       $table_name = $wpdb->prefix . NUTRI_COACH_PROGRAM_PREFIX . 'meal_progress';
+       
+       $progress = $wpdb->get_row(
+           $wpdb->prepare(
+               "SELECT * FROM $table_name 
+               WHERE user_id = %d AND program_id = %d AND meal_id = %s 
+               ORDER BY date DESC 
+               LIMIT 1",
+               $user_id,
+               $program_id,
+               $meal_id
+           ),
+           ARRAY_A
+       );
+       
+       if ($progress) {
+           wp_send_json_success($progress);
+       } else {
+           wp_send_json_success(array());
+       }
+   }
+   
+   /**
+    * اضافه کردن اسکریپت‌ها و استایل‌های سمت کاربر
+    */
+   public function enqueue_frontend_scripts() {
+       wp_enqueue_style(
+           'nutri-coach-program-style',
+           NUTRI_COACH_PROGRAM_PLUGIN_URL . 'assets/css/frontend.css',
+           array(),
+           NUTRI_COACH_PROGRAM_VERSION
+       );
+       
+       wp_enqueue_script(
+           'chart-js',
+           'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js',
+           array(),
+           '3.7.1',
+           true
+       );
+       
+       wp_enqueue_script(
+           'nutri-coach-program-script',
+           NUTRI_COACH_PROGRAM_PLUGIN_URL . 'assets/js/frontend.js',
+           array('jquery', 'chart-js'),
+           NUTRI_COACH_PROGRAM_VERSION,
+           true
+       );
+       
+       wp_localize_script(
+           'nutri-coach-program-script',
+           'nutriCoachProgram',
+           array(
+               'ajaxurl' => admin_url('admin-ajax.php'),
+               'nonce' => wp_create_nonce('nutri_coach_program_nonce'),
+               'i18n' => array(
+                   'save_success' => __('اطلاعات با موفقیت ذخیره شد.', 'nutri-coach-program'),
+                   'save_error' => __('خطا در ذخیره اطلاعات.', 'nutri-coach-program'),
+                   'saving' => __('در حال ذخیره...', 'nutri-coach-program'),
+               ),
+           )
+       );
+   }
+   
+   /**
+    * اضافه کردن اسکریپت‌ها و استایل‌های سمت مدیر
+    */
+   public function enqueue_admin_scripts($hook) {
+       // اضافه کردن استایل‌ها فقط در صفحات مربوط به افزونه
+       if (strpos($hook, 'nutri-coach') !== false) {
+           wp_enqueue_style(
+               'nutri-coach-program-admin-style',
+               NUTRI_COACH_PROGRAM_PLUGIN_URL . 'assets/css/admin.css',
+               array(),
+               NUTRI_COACH_PROGRAM_VERSION
+           );
+           
+           wp_enqueue_script(
+               'chart-js',
+               'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js',
+               array(),
+               '3.7.1',
+               true
+           );
+           
+           wp_enqueue_script(
+               'nutri-coach-program-admin-script',
+               NUTRI_COACH_PROGRAM_PLUGIN_URL . 'assets/js/admin.js',
+               array('jquery', 'chart-js'),
+               NUTRI_COACH_PROGRAM_VERSION,
+               true
+           );
+           
+           wp_localize_script(
+               'nutri-coach-program-admin-script',
+               'nutriCoachProgramAdmin',
+               array(
+                   'ajaxurl' => admin_url('admin-ajax.php'),
+                   'nonce' => wp_create_nonce('nutri_coach_program_admin_nonce'),
+               )
+           );
+       }
+   }
+   
+   /**
+    * افزودن داده‌های برنامه به پروفایل کاربر
+    */
+   public function add_program_data_to_profile($user_data, $user_id) {
+       // بررسی آیا کاربر برنامه دارد
+       global $wpdb;
+       $table_name = $wpdb->prefix . NUTRI_COACH_PROGRAM_PREFIX . 'user_programs';
+       
+       $program = $wpdb->get_row(
+           $wpdb->prepare(
+               "SELECT * FROM $table_name WHERE user_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1",
+               $user_id
+           ),
+           ARRAY_A
+       );
+       
+       if ($program) {
+           // اضافه کردن اطلاعات برنامه به داده‌های کاربر
+           $user_data['has_program'] = true;
+           $user_data['program_id'] = $program['id'];
+           $user_data['program_start_date'] = $program['start_date'];
+           
+           // اضافه کردن جزئیات برنامه‌ها
+           if (!empty($program['workout_program'])) {
+               $user_data['workout_program'] = json_decode($program['workout_program'], true);
+           }
+           
+           if (!empty($program['diet_program'])) {
+               $user_data['diet_program'] = json_decode($program['diet_program'], true);
+           }
+           
+           // اضافه کردن آمار پیشرفت
+           $progress_tracker = new Nutri_Coach_Progress_Tracker();
+           $user_data['progress_stats'] = $progress_tracker->get_progress_stats($user_id, $program['id']);
+       } else {
+           $user_data['has_program'] = false;
+       }
+       
+       return $user_data;
+   }
+   
+   /**
+    * واکنش به بروزرسانی پروفایل کاربر
+    */
+   public function profile_updated($user_id, $data) {
+       // بررسی آیا نیاز به بروزرسانی برنامه کاربر است
+       $this->check_and_update_user_program($user_id);
+   }
+   
+   /**
+    * واکنش به افزودن داده‌های آنتروپومتریک جدید
+    */
+   public function anthropometric_added($user_id, $data) {
+       // بررسی آیا نیاز به بروزرسانی برنامه کاربر است
+       $this->check_and_update_user_program($user_id);
+   }
+   
+   /**
+    * بررسی و بروزرسانی برنامه کاربر
+    */
+   private function check_and_update_user_program($user_id) {
+       // دریافت اطلاعات کاربر
+       $user_data = apply_filters('nutri_coach_get_user_data', array(), $user_id);
+       
+       if (empty($user_data)) {
+           return;
+       }
+       
+       // یافتن قانون مناسب
+       $rule_id = $this->find_matching_rule($user_data);
+       
+       if ($rule_id > 0) {
+           // اختصاص برنامه به کاربر
+           $this->assign_program_to_user($user_id, $rule_id);
+       }
+   }
+   
+   /**
+    * یافتن قانون مناسب برای کاربر
+    */
+   private function find_matching_rule($user_data) {
+       global $wpdb;
+       $table_name = $wpdb->prefix . NUTRI_COACH_PROGRAM_PREFIX . 'rules';
+       
+       // استخراج اطلاعات کاربر
+       $gender = isset($user_data['gender']) ? $user_data['gender'] : '';
+       $age = isset($user_data['age']) ? intval($user_data['age']) : 0;
+       $waist = isset($user_data['waist_circumference']) ? floatval($user_data['waist_circumference']) : 0;
+       $hip = isset($user_data['hip_circumference']) ? floatval($user_data['hip_circumference']) : 0;
+       $neck = isset($user_data['neck_circumference']) ? floatval($user_data['neck_circumference']) : 0;
+       $fitness_goal = isset($user_data['fitness_goal']) ? $user_data['fitness_goal'] : '';
+       
+       // ساخت شرط پیچیده SQL
+       $where_conditions = array();
+       $where_params = array();
+       
+       // شرط جنسیت
+       if (!empty($gender)) {
+           $where_conditions[] = "(gender = %s OR gender = '')";
+           $where_params[] = $gender;
+       }
+       
+       // شرط سن
+       if ($age > 0) {
+           $where_conditions[] = "((age_min <= %d AND age_max >= %d) OR (age_min = 0 AND age_max = 0) OR (age_min = 0 AND age_max >= %d) OR (age_min <= %d AND age_max = 0))";
+           $where_params[] = $age;
+           $where_params[] = $age;
+           $where_params[] = $age;
+           $where_params[] = $age;
+       }
+       
+       // شرط دور کمر
         if ($waist > 0) {
             $where_conditions[] = "((waist_min <= %f AND waist_max >= %f) OR (waist_min = 0 AND waist_max = 0) OR (waist_min = 0 AND waist_max >= %f) OR (waist_min <= %f AND waist_max = 0))";
             $where_params[] = $waist;
